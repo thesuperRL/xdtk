@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ScaleGestureDetector;
 import com.google.ar.core.Pose;
 import com.google.ar.core.examples.java.common.helpers.BTPermissionHelper;
@@ -68,12 +69,8 @@ public class CommunicationHandler {
       // Request relevant BT permissions
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
-      // Toggle Advertising
-      if (btTransceiver.isAdvertising()){
-        btTransceiver.stopAdvertise();
-      } else{
-        btTransceiver.startAdvertise();
-      }
+      Log.i("CommunicationHandler", "Initiating Transceiver");
+      BLEssedTransceiver.getInstance(mainApp.getApplicationContext());
     }
   }
 
