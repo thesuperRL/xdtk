@@ -34,7 +34,6 @@ import java.util.TimerTask;
 
 public class CommunicationHandler {
   private Transceiver transceiver;
-  private BTTransceiver btTransceiver;
   private final int sendPort = 5555;
   private final int receivePort = 5556;
   private Boolean isConnected = false;
@@ -56,7 +55,6 @@ public class CommunicationHandler {
     resetHeartbeatTimer = new Timer();
     initResetHeartbeatTask();
     vibrator = activity.getSystemService(Vibrator.class);
-    btTransceiver = new BTTransceiver(mainApp);
   }
 
   public void openConnection(String ipAddress) {
