@@ -75,7 +75,7 @@ public class BLEDeviceInformationService extends BLEBasicService {
         if (current > 120) current = 100;
         final byte[] value = new byte[]{0x00, (byte) current};
         notifyCharacteristicChanged(value, orientation);
-        handler.postDelayed(notifyRunnable, 60000);
+        handler.postDelayed(notifyRunnable, 1000);
         Log.i(TAG, "new hr: %d" + current);
     }
 
