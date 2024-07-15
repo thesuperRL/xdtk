@@ -14,8 +14,6 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.xrinput.BTTransceiver;
-
 public final class BTPermissionHelper {
     private static final int BT_PERMISSION_CODE = 1;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;

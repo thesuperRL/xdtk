@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ScaleGestureDetector;
 import com.google.ar.core.Pose;
 import com.google.ar.core.examples.java.common.helpers.BTPermissionHelper;
@@ -33,7 +34,6 @@ import java.util.TimerTask;
 
 public class CommunicationHandler {
   private Transceiver transceiver;
-  private BTTransceiver btTransceiver;
   private final int sendPort = 5555;
   private final int receivePort = 5556;
   private Boolean isConnected = false;
@@ -55,7 +55,6 @@ public class CommunicationHandler {
     resetHeartbeatTimer = new Timer();
     initResetHeartbeatTask();
     vibrator = activity.getSystemService(Vibrator.class);
-    btTransceiver = new BTTransceiver(mainApp);
   }
 
   public void openConnection(String ipAddress) {
@@ -68,12 +67,8 @@ public class CommunicationHandler {
       // Request relevant BT permissions
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
-      // Toggle Advertising
-      if (btTransceiver.isAdvertising()){
-        btTransceiver.stopAdvertise();
-      } else{
-        btTransceiver.startAdvertise();
-      }
+      Log.i("CommunicationHandler", "Initiating Transceiver");
+      BLEssedTransceiver.getInstance(mainApp.getApplicationContext());
     }
   }
 
