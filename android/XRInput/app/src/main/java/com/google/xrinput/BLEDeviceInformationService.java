@@ -50,7 +50,10 @@ public class BLEDeviceInformationService extends BLEBasicService {
     public ReadResponse onCharacteristicRead(@NotNull BluetoothCentral central, @NotNull BluetoothGattCharacteristic characteristic) {
         Log.i(TAG, "Detected a read request");
         if (characteristic.getUuid().equals(CHARACTERISTIC_UUID)) {
-            return new ReadResponse(GattStatus.SUCCESS, new byte[]{0x00, 0x40});
+            current += (int) ((Math.random() * 10) - 5);
+            if (current > 120) current = 100;
+            final byte[] value = new byte[]{0x00, (byte) current};
+            return new ReadResponse(GattStatus.SUCCESS, value);
         }
         return super.onCharacteristicRead(central, characteristic);
     }

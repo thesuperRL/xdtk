@@ -191,7 +191,7 @@ public class BLEssedTransceiver {
         }
 
         // Set the adapter name as this is used when advertising
-        bluetoothAdapter.setName("XDTKAndroid");
+        bluetoothAdapter.setName("XDTKAndroid2");
 
         this.peripheralManager = new BluetoothPeripheralManager(context, bluetoothManager, peripheralManagerCallback);
         this.peripheralManager.removeAllServices();
