@@ -306,7 +306,7 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                 if (!sendingDataFlag) {
                   sendingDataFlag = true;
                   //communicationHandler.openConnection(hmdIPstring);
-                  communicationHandler.bluetoothBecomeDiscoverable();
+                  communicationHandler.bluetoothClassicBecomeDiscoverable();
                   Log.d(TAG, "Started sending data");
 
                   // disable button
