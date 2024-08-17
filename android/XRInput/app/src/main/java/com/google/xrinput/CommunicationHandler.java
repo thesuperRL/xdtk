@@ -16,6 +16,7 @@
 
 package com.google.xrinput;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Point;
 import android.hardware.Sensor;
@@ -32,6 +33,7 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
+@SuppressLint("MissingPermission")
 public class CommunicationHandler {
   private Transceiver transceiver;
   private final int sendPort = 5555;
@@ -39,6 +41,7 @@ public class CommunicationHandler {
   private Boolean isConnected = false;
   private Activity mainApp;
   private Vibrator vibrator;
+  private BluetoothClassicHandler handler;
 
   // timer
   private Timer resetHeartbeatTimer;
@@ -61,15 +64,19 @@ public class CommunicationHandler {
     transceiver = new Transceiver(ipAddress, sendPort, receivePort, this);
   }
 
-  public void bluetoothBecomeDiscoverable (){
+  public void bluetoothClassicBecomeDiscoverable(){
     // If it doesn't have relevant BT permissions
     if (!BTPermissionHelper.hasBTPermission(mainApp)){
+      Log.i("CommunicationHandler", "Requesting Bluetooth Permissions");
       // Request relevant BT permissions
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
       Log.i("CommunicationHandler", "Initiating Transceiver");
-      BLEssedTransceiver.getInstance(mainApp.getApplicationContext());
+      handler = new BluetoothClassicHandler(mainApp);
+      Log.i("CommunicationHandler", "Becoming Discoverable");
+      handler.makeSelfDiscoverable();
     }
+    Log.i("CommunicationHandler", "Message Sent!");
   }
 
   public void closeConnection() {
