@@ -76,7 +76,6 @@ public class CommunicationHandler {
       Log.i("CommunicationHandler", "Becoming Discoverable");
       handler.makeSelfDiscoverable();
     }
-    Log.i("CommunicationHandler", "Message Sent!");
   }
 
   public void closeConnection() {
