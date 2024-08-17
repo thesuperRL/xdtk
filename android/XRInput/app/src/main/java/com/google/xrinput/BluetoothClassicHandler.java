@@ -23,7 +23,7 @@ public class BluetoothClassicHandler {
     BluetoothClassicConnectingThread connectingThread;
     BluetoothClassicAcceptConnectedThread connectedThread;
     int REQUEST_ENABLE_BT = 1;
-    private String NAME = "XDTKAndroid4";
+    private String NAME = "XDTKAndroid5";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
     private int mState;
     private int mNewState;
