@@ -61,7 +61,7 @@ public class BluetoothClassicHandler {
         Log.d(TAG, "Socket connected!");
     }
 
-    public void sendInfo(String info){
+    public void sendData(String info){
         if (connectedThread != null){
             connectedThread.write(info);
         }
