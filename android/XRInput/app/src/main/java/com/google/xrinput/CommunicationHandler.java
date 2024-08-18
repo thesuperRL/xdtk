@@ -35,13 +35,16 @@ import java.util.TimerTask;
 
 @SuppressLint("MissingPermission")
 public class CommunicationHandler {
-  private Transceiver transceiver;
   private final int sendPort = 5555;
   private final int receivePort = 5556;
   private Boolean isConnected = false;
   private Activity mainApp;
   private Vibrator vibrator;
-  private BluetoothClassicAcceptConnectedThread connectedThread = null;
+
+  // connections
+  private boolean isUsingWifi = true;
+  private Transceiver transceiver;
+  private BluetoothClassicHandler bluetoothHandler;
 
   // timer
   private Timer resetHeartbeatTimer;
@@ -72,9 +75,9 @@ public class CommunicationHandler {
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
       Log.i("CommunicationHandler", "Initiating Transceiver");
-      BluetoothClassicHandler connector = new BluetoothClassicHandler(mainApp);
+      bluetoothHandler = new BluetoothClassicHandler(mainApp);
       Log.i("CommunicationHandler", "Becoming Discoverable");
-      connectedThread = connector.makeSelfDiscoverable();
+      bluetoothHandler.makeSelfDiscoverable();
     }
     connectedThread.write("xdtk");
     Log.i("CommunicationHandler", "Message Sent!");
