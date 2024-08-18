@@ -35,6 +35,8 @@ import java.util.TimerTask;
 
 @SuppressLint("MissingPermission")
 public class CommunicationHandler {
+  private final String TAG = CommunicationHandler.class.getSimpleName();
+
   private final int sendPort = 5555;
   private final int receivePort = 5556;
   private Boolean isConnected = false;
@@ -88,17 +90,16 @@ public class CommunicationHandler {
   public void openBluetoothConnection(){
     // If it doesn't have relevant BT permissions
     if (!BTPermissionHelper.hasBTPermission(mainApp)){
-      Log.i("CommunicationHandler", "Requesting Bluetooth Permissions");
+      Log.i(TAG, "Requesting Bluetooth Permissions");
       // Request relevant BT permissions
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
-      Log.i("CommunicationHandler", "Initiating Transceiver");
+      Log.i(TAG, "Initiating Transceiver");
       bluetoothHandler = new BluetoothClassicHandler(mainApp);
-      Log.i("CommunicationHandler", "Becoming Discoverable");
+      Log.i(TAG, "Becoming Discoverable");
       bluetoothHandler.makeSelfDiscoverable();
     }
-    bluetoothHandler.sendInfo("xdtk");
-    Log.i("CommunicationHandler", "Message Sent!");
+    bluetoothHandler.sendData("xdtk");
   }
 
   public void closeConnection() {
@@ -155,12 +156,20 @@ public class CommunicationHandler {
     return isConnected;
   }
 
+  public void sendData(String message){
+    if (isUsingWifi && transceiver != null){
+      transceiver.sendData(message);
+    } else if (bluetoothHandler != null){
+      bluetoothHandler.sendData(message);
+    } else{
+      Log.d(TAG, "Failed to send message: \"" + message + "\" because " + (isUsingWifi ? "Wi-fi" : "Bluetooth") + " transceiver is null.");
+    }
+  }
+
   /** Sensor Messages */
   public void sendDeviceOrientation(SensorHandler sensorHandler) {
     String msg = "DEVICE_ORIENTATION," + sensorHandler.getDeviceOrientation();
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendAccelerometer(SensorHandler sensorHandler) {
@@ -168,9 +177,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "ACCELEROMETER," + val[0] + "," + val[1] + "," + val[2];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendLinearAcceleration(SensorHandler sensorHandler) {
@@ -178,9 +185,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "LINEAR_ACCELERATION," + val[0] + "," + val[1] + "," + val[2];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendGravity(SensorHandler sensorHandler) {
@@ -188,9 +193,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "GRAVITY," + val[0] + "," + val[1] + "," + val[2];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendGyroscope(SensorHandler sensorHandler) {
@@ -198,9 +201,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "GYROSCOPE," + val[0] + "," + val[1] + "," + val[2];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendGameRotationVector(SensorHandler sensorHandler) {
@@ -208,9 +209,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "GAME_ROTATION_VECTOR," + val[0] + "," + val[1] + "," + val[2] + "," + val[3];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendRotationVector(SensorHandler sensorHandler) {
@@ -218,9 +217,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "ROTATION_VECTOR," + val[0] + "," + val[1] + "," + val[2] + "," + val[3];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendMagneticField(SensorHandler sensorHandler) {
@@ -228,9 +225,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "MAGNETIC_FIELD," + val[0] + "," + val[1] + "," + val[2];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendProximity(SensorHandler sensorHandler) {
@@ -238,9 +233,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "PROXIMITY," + val[0];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendAmbientTemperature(SensorHandler sensorHandler) {
@@ -248,9 +241,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "AMBIENT_TEMPERATURE," + val[0];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendLight(SensorHandler sensorHandler) {
@@ -258,9 +249,7 @@ public class CommunicationHandler {
     if (val == null) return;
 
     String msg = "LIGHT," + val[0];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   /** ARCore Pose Messages */
@@ -282,9 +271,7 @@ public class CommunicationHandler {
                     + rotation[2]
                     + ","
                     + rotation[3];
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   /** Touch Messages */
@@ -306,9 +293,7 @@ public class CommunicationHandler {
                     + touch.deltaY
                     + ","
                     + touch.toolType;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendTouchUp(Touch touch) {
@@ -329,9 +314,7 @@ public class CommunicationHandler {
                     + touch.deltaY
                     + ","
                     + touch.toolType;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendTouchMove(Touch touch) {
@@ -354,66 +337,48 @@ public class CommunicationHandler {
                       + touch.deltaY
                       + ","
                       + touch.toolType;
-      if (transceiver != null) {
-        transceiver.sendData(msg);
-      }
+      sendData(msg);
     }
   }
 
   public void sendTap(int pointerID, int tapCount) {
     String msg = "TAP," + pointerID + "," + tapCount;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendTapConfirmed(int pointerID, int tapCount) {
     String msg = "TAPCONFIRMED," + pointerID + "," + tapCount;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendDoubleTap(int pointerID, int tapCount) {
     String msg = "DOUBLETAP," + pointerID + "," + tapCount;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendLongPress(int pointerID) {
     String msg = "LONGPRESS," + pointerID;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendFling(int pointerID, float velocityX, float velocityY) {
     String msg = "FLING," + velocityX + "," + velocityY;
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendPinchStart(ScaleGestureDetector detector) {
     String msg = "PINCH_START," + detector.getCurrentSpan();
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendPinch(ScaleGestureDetector detector) {
     String msg = "PINCH_MOVE," + detector.getCurrentSpan();
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   public void sendPinchEnd(ScaleGestureDetector detector) {
     String msg = "PINCH_END," + detector.getCurrentSpan();
-    if (transceiver != null) {
-      transceiver.sendData(msg);
-    }
+    sendData(msg);
   }
 
   /** Device Information Messages */
