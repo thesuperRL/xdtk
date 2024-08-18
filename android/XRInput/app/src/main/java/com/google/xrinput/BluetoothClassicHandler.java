@@ -22,30 +22,20 @@ public class BluetoothClassicHandler {
     BluetoothAdapter bluetoothAdapter;
     BluetoothClassicConnectingThread connectingThread;
     BluetoothClassicAcceptConnectedThread connectedThread;
-    int REQUEST_ENABLE_BT = 1;
-    private String NAME = "XDTKAndroid5";
+    private String NAME = "XDTKAndroid3";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
-    private int mState;
-    private int mNewState;
-
-    // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTENING = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+    private boolean running;
 
     public BluetoothClassicHandler(Activity activity){
         mainApp = activity;
         bluetoothManager = mainApp.getSystemService(BluetoothManager.class);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        this.running = true;
+
         if (!bluetoothAdapter.isEnabled()) {
             //TODO request user enable bluetooth
         }
-    }
-
-    public synchronized int getState() {
-        return mState;
     }
 
     void ChangeDeviceName(){
@@ -77,6 +67,10 @@ public class BluetoothClassicHandler {
         }
     }
 
+    public boolean isRunning() {
+        return running;
+    }
+
     public class BluetoothClassicConnectingThread extends Thread {
         private final BluetoothServerSocket mmServerSocket;
 
@@ -92,14 +86,13 @@ public class BluetoothClassicHandler {
                 Log.e(TAG, "Socket's listen() method failed", e);
             }
             mmServerSocket = tmp;
-            mState = STATE_LISTENING;
         }
 
         public void run() {
             BluetoothSocket socket = null;
             // Keep listening until exception occurs or a socket is returned.
             Log.d(TAG, "Thread Initiated and Run");
-            while (mState != STATE_CONNECTED) {
+            while (true) {
                 Log.d(TAG, "inside while true");
                 try {
                     // This is a blocking call and will only return on a
@@ -115,21 +108,10 @@ public class BluetoothClassicHandler {
                 if (socket != null) {
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
+                    Log.d(TAG, "Syncing...");
                     synchronized (BluetoothClassicHandler.this) {
-                        switch (mState) {
-                            case STATE_CONNECTING:
-                                // Situation normal. Start the connected thread.
-                                connect(socket);
-                            case STATE_CONNECTED:
-                                // Either not ready or already connected. Terminate new socket.
-                                try {
-                                    socket.close();
-                                } catch (IOException e) {
-                                    Log.e(TAG, "Could not close unwanted socket", e);
-                                }
-                            default:
-
-                        }
+                        Log.d(TAG, "Synced!");
+                        connect(socket);
                     }
                     cancel();
                     break;
@@ -165,6 +147,7 @@ public class BluetoothClassicHandler {
             // hypothetically, we also only need output stream, because we aren't trying to read anything
             try {
                 tmpOut = socket.getOutputStream();
+                Log.d(TAG, "Output Stream Created");
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating output stream", e);
             }
