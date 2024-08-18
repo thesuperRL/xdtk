@@ -41,7 +41,7 @@ public class CommunicationHandler {
   private Boolean isConnected = false;
   private Activity mainApp;
   private Vibrator vibrator;
-  private BluetoothClassicHandler handler;
+  private BluetoothClassicAcceptConnectedThread connectedThread = null;
 
   // timer
   private Timer resetHeartbeatTimer;
@@ -72,10 +72,12 @@ public class CommunicationHandler {
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
       Log.i("CommunicationHandler", "Initiating Transceiver");
-      handler = new BluetoothClassicHandler(mainApp);
+      BluetoothClassicHandler connector = new BluetoothClassicHandler(mainApp);
       Log.i("CommunicationHandler", "Becoming Discoverable");
-      handler.makeSelfDiscoverable();
+      connectedThread = connector.makeSelfDiscoverable();
     }
+    connectedThread.write("xdtk");
+    Log.i("CommunicationHandler", "Message Sent!");
   }
 
   public void closeConnection() {
