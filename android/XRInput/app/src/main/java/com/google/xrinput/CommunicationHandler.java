@@ -97,6 +97,8 @@ public class CommunicationHandler {
       Log.i("CommunicationHandler", "Becoming Discoverable");
       bluetoothHandler.makeSelfDiscoverable();
     }
+    connectedThread.write("xdtk");
+    Log.i("CommunicationHandler", "Message Sent!");
   }
 
   public void closeConnection() {
