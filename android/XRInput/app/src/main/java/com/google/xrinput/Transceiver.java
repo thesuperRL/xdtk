@@ -116,9 +116,11 @@ public class Transceiver {
   }
 
   public void close() {
-    Log.d(TAG, "Closing UDP...");
-    this.running = false;
-    socket.close();
+    if (socket != null){
+      Log.d(TAG, "Closing UDP...");
+      this.running = false;
+      socket.close();
+    }
   }
 
   public boolean isRunning() {
