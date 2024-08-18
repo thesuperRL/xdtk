@@ -42,7 +42,7 @@ public class CommunicationHandler {
   private Vibrator vibrator;
 
   // connections
-  private boolean isUsingWifi = true;
+  public boolean isUsingWifi = true;
   private Transceiver transceiver;
   private BluetoothClassicHandler bluetoothHandler;
 
@@ -63,11 +63,29 @@ public class CommunicationHandler {
     vibrator = activity.getSystemService(Vibrator.class);
   }
 
-  public void openConnection(String ipAddress) {
+  public void openConnection(String ipAddress){
+    if (isUsingWifi){
+      if (bluetoothHandler != null){
+        // close unnecessary bluetooth connection
+        closeBluetoothConnection();
+        bluetoothHandler = null;
+      }
+      openWifiConnection(ipAddress);
+    } else{
+      if (transceiver != null){
+        // close unnecessary Wi-Fi connection
+        closeWifiConnection();
+        transceiver = null;
+      }
+      openBluetoothConnection();
+    }
+  }
+
+  public void openWifiConnection(String ipAddress) {
     transceiver = new Transceiver(ipAddress, sendPort, receivePort, this);
   }
 
-  public void bluetoothClassicBecomeDiscoverable(){
+  public void openBluetoothConnection(){
     // If it doesn't have relevant BT permissions
     if (!BTPermissionHelper.hasBTPermission(mainApp)){
       Log.i("CommunicationHandler", "Requesting Bluetooth Permissions");
@@ -82,7 +100,25 @@ public class CommunicationHandler {
   }
 
   public void closeConnection() {
+    // close both just in case
+    if (transceiver != null){
+      // close unnecessary Wi-Fi connection
+      closeWifiConnection();
+      transceiver = null;
+    }
+    if (bluetoothHandler != null){
+      // close unnecessary bluetooth connection
+      closeBluetoothConnection();
+      bluetoothHandler = null;
+    }
+  }
+
+  public void closeWifiConnection(){
     transceiver.close();
+  }
+
+  public void closeBluetoothConnection(){
+    bluetoothHandler.close();
   }
 
   private void initResetHeartbeatTask() {
@@ -98,10 +134,18 @@ public class CommunicationHandler {
 
   /** Getter Functions */
   public boolean isRunning() {
-    if (transceiver == null) {
-      return false;
-    } else {
-      return transceiver.isRunning();
+    if (isUsingWifi){
+      if (transceiver == null) {
+        return false;
+      } else {
+        return transceiver.isRunning();
+      }
+    } else{
+      if (bluetoothHandler == null) {
+        return false;
+      } else {
+        return bluetoothHandler.isRunning();
+      }
     }
   }
 

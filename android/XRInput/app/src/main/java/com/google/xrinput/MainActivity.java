@@ -16,18 +16,9 @@
 
 package com.google.xrinput;
 
-import static android.Manifest.permission.BLUETOOTH_SCAN;
-
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
@@ -44,13 +35,10 @@ import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Camera;
@@ -110,7 +98,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
   private TextView orientationText;
   private Button connectButton;
   private Button editHMDaddressButton;
-  private Switch toggleARCoreSwitch;;
+  private Switch toggleARCoreSwitch;
+  private ToggleButton toggleConnectionSwitch;
   private String hmdIPstring = "192.168.0.1";
   private GradientDrawable connectionIndicator;
 
@@ -181,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
 
                   // Check if we should stop communication
                   if (tapsRemainingToStopConnection == 0) {
+                    Log.d(TAG, "Ending Connection");
                     sendingDataFlag = false;
                     communicationHandler.closeConnection();
 
@@ -191,6 +181,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                     editHMDaddressButton.setEnabled(true);
                     toggleARCoreSwitch.setClickable(true);
                     toggleARCoreSwitch.setEnabled(true);
+                    toggleConnectionSwitch.setClickable(true);
+                    toggleConnectionSwitch.setEnabled(true);
                   }
                 }
 
@@ -305,8 +297,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                 // This code will be executed when the button is pressed
                 if (!sendingDataFlag) {
                   sendingDataFlag = true;
-                  //communicationHandler.openConnection(hmdIPstring);
-                  communicationHandler.bluetoothClassicBecomeDiscoverable();
+                  // initialize the connection, and within CommHandler check if it's Wi-Fi or BT
+                  communicationHandler.openConnection(hmdIPstring);
                   Log.d(TAG, "Started sending data");
 
                   // disable button
@@ -316,6 +308,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                   editHMDaddressButton.setEnabled(false);
                   toggleARCoreSwitch.setClickable(false);
                   toggleARCoreSwitch.setEnabled(false);
+                  toggleConnectionSwitch.setClickable(false);
+                  toggleConnectionSwitch.setEnabled(false);
                 }
               }
             });
@@ -333,6 +327,24 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                   if (USE_AR_CORE) ARCoreOnPause();
                   pose = null;
                   messageSnackbarHelper.hide(MainActivity.this);
+                }
+              }
+            });
+
+
+    toggleConnectionSwitch = findViewById(R.id.connection_toggle);
+    toggleConnectionSwitch.setOnCheckedChangeListener(
+            new CompoundButton.OnCheckedChangeListener() {
+              @Override
+              public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (!isChecked) {
+                  // use Wi-fi
+                  Log.d(TAG, "Using Wi-Fi");
+                  communicationHandler.isUsingWifi = true;
+                } else {
+                  // use Bluetooth
+                  Log.d(TAG, "Using Bluetooth");
+                  communicationHandler.isUsingWifi = false;
                 }
               }
             });

@@ -44,10 +44,10 @@ public class BluetoothClassicHandler {
     }
 
     public void makeSelfDiscoverable(){ int requestCode = 1;
-
         // create a thread to allow for discoverability and connectivity in the background
         connectingThread = new BluetoothClassicConnectingThread();
         connectingThread.start();
+
         ChangeDeviceName(); // change the device name to make it more unique
         Intent discoverableIntent =
                 new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
@@ -69,6 +69,18 @@ public class BluetoothClassicHandler {
 
     public boolean isRunning() {
         return running;
+    }
+
+    public void close(){
+        if (connectingThread != null){
+            connectingThread.cancel();
+            connectingThread = null;
+        }
+        if (connectedThread != null){
+            connectedThread.cancel();
+            connectedThread = null;
+        }
+        running = false;
     }
 
     public class BluetoothClassicConnectingThread extends Thread {
