@@ -2,9 +2,17 @@ package com.google.xrinput;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.bluetooth.*;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.util.Log;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @SuppressLint("MissingPermission")
 public class BluetoothClassicHandler {
@@ -31,14 +39,15 @@ public class BluetoothClassicHandler {
     }
 
     void ChangeDeviceName(){
-        bluetoothAdapter.setName(name);
-        Log.i("BluetoothClassicConnector", "localdevicename : "+ name +" localdeviceAddress : " + bluetoothAdapter.getAddress());
+        bluetoothAdapter.setName(NAME);
+        Log.i("BluetoothClassicConnector", "localdevicename : "+ NAME +" localdeviceAddress : " + bluetoothAdapter.getAddress());
     }
 
     public void makeSelfDiscoverable(){ int requestCode = 1;
         // create a thread to allow for discoverability and connectivity in the background
         connectingThread = new BluetoothClassicConnectingThread();
         connectingThread.start();
+
         ChangeDeviceName(); // change the device name to make it more unique
         Intent discoverableIntent =
                 new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
@@ -62,7 +71,7 @@ public class BluetoothClassicHandler {
         return running;
     }
 
-    public void close(){
+    public void close() {
         if (connectingThread != null){
             connectingThread.cancel();
             connectingThread = null;
@@ -71,7 +80,6 @@ public class BluetoothClassicHandler {
             connectedThread.cancel();
             connectedThread = null;
         }
-        running = false;
     }
 
     public class BluetoothClassicConnectingThread extends Thread {
@@ -122,7 +130,18 @@ public class BluetoothClassicHandler {
             }
         }
 
-        return connectedThread;
+        public BluetoothClassicAcceptConnectedThread getConnectedThread(){
+            return connectedThread;
+        }
+
+        // Closes the connect socket and causes the thread to finish.
+        public void cancel() {
+            try {
+                mmServerSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close the connect socket", e);
+            }
+        }
     }
 
     public class BluetoothClassicAcceptConnectedThread extends Thread {
