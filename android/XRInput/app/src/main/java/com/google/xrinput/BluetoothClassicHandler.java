@@ -32,6 +32,7 @@ public class BluetoothClassicHandler {
 
     private Queue<String> informationToSend = new ArrayDeque<String>();
     private int packetsInOStream = 0;
+    private final int maxAllowedPackets = 8;
 
     public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
         mainApp = activity;
@@ -231,7 +232,7 @@ public class BluetoothClassicHandler {
 
         // Call this from the main activity to send data to the remote device.
         public void write(String data) {
-            if(packetsInOStream == 6){
+            if(packetsInOStream == maxAllowedPackets){
                 return;
             }
             // pre-append timestamp
