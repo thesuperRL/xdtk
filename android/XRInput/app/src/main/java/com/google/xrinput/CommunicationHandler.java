@@ -95,7 +95,7 @@ public class CommunicationHandler {
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
       Log.i(TAG, "Initiating Transceiver");
-      bluetoothHandler = new BluetoothClassicHandler(mainApp);
+      bluetoothHandler = new BluetoothClassicHandler(mainApp, this);
       Log.i(TAG, "Becoming Discoverable");
       bluetoothHandler.makeSelfDiscoverable();
     }
@@ -160,7 +160,7 @@ public class CommunicationHandler {
     if (isUsingWifi && transceiver != null){
       transceiver.sendData(message);
     } else if (bluetoothHandler != null){
-      bluetoothHandler.sendData(message);
+      bluetoothHandler.sendData(message + bluetoothHandler.STOPCHAR);
     } else{
       Log.d(TAG, "Failed to send message: \"" + message + "\" because " + (isUsingWifi ? "Wi-fi" : "Bluetooth") + " transceiver is null.");
     }
@@ -420,9 +420,8 @@ public class CommunicationHandler {
                       + widthInches
                       + ","
                       + heightInches;
-      if (transceiver != null) {
-        transceiver.sendData(msg);
-      }
+      Log.d(TAG, msg);
+      sendData(msg);
     }
   }
 

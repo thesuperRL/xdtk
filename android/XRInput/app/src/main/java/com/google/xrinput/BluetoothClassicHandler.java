@@ -9,8 +9,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.util.Log;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -25,11 +24,14 @@ public class BluetoothClassicHandler {
     private String NAME = "XDTKAndroid3";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
     private boolean running;
+    public String STOPCHAR = " | ";
+    private CommunicationHandler commsHandler;
 
-    public BluetoothClassicHandler(Activity activity){
+    public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
         mainApp = activity;
         bluetoothManager = mainApp.getSystemService(BluetoothManager.class);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        this.commsHandler = commsHandler;
 
         this.running = true;
 
@@ -146,16 +148,23 @@ public class BluetoothClassicHandler {
 
     public class BluetoothClassicAcceptConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
         private final OutputStream mmOutStream;
         private byte[] mmBuffer; // mmBuffer store for the stream
 
         public BluetoothClassicAcceptConnectedThread(BluetoothSocket socket) {
             mmSocket = socket;
+            InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
             // Get the input and output streams; using temp objects because
             // member streams are final.
-            // hypothetically, we also only need output stream, because we aren't trying to read anything
+            try {
+                tmpIn = socket.getInputStream();
+                Log.d(TAG, "Input Stream Created");
+            } catch (IOException e) {
+                Log.e(TAG, "Error occurred when creating input stream", e);
+            }
             try {
                 tmpOut = socket.getOutputStream();
                 Log.d(TAG, "Output Stream Created");
@@ -163,14 +172,35 @@ public class BluetoothClassicHandler {
                 Log.e(TAG, "Error occurred when creating output stream", e);
             }
 
+            mmInStream = tmpIn;
             mmOutStream = tmpOut;
+        }
 
-            write("Received Message From " + NAME);
+        public void run() {
+            mmBuffer = new byte[1024];
+            int numBytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs.
+            while (true) {
+                try {
+                    mmBuffer = new byte[9]; // the only two possible texts received is "WHOAREYOU" and "HEARTBEAT" so 1024 should be more than enough
+                    numBytes = mmInStream.read(mmBuffer);
+                    String message = new String(mmBuffer, StandardCharsets.UTF_8); // Decode with UTF-8
+                    Log.d(TAG, "Received Message from Client: " + message);
+                    commsHandler.parseReceivedMessage(message);
+                } catch (IOException e) {
+                    Log.d(TAG, "Input stream was disconnected", e);
+                    break;
+                }
+            }
         }
 
         // Call this from the main activity to send data to the remote device.
-        public void write(String message) {
-            byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        public void write(String data) {
+            // pre-append timestamp
+            long timestamp = System.currentTimeMillis();
+            String dataToSend = timestamp + "," + data;
+            byte[] bytes = dataToSend.getBytes(StandardCharsets.UTF_8);
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) {
