@@ -160,7 +160,7 @@ public class CommunicationHandler {
     if (isUsingWifi && transceiver != null){
       transceiver.sendData(message);
     } else if (bluetoothHandler != null){
-      bluetoothHandler.sendData(message + bluetoothHandler.STOPCHAR);
+      bluetoothHandler.sendData(message);
     } else{
       Log.d(TAG, "Failed to send message: \"" + message + "\" because " + (isUsingWifi ? "Wi-fi" : "Bluetooth") + " transceiver is null.");
     }

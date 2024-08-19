@@ -11,6 +11,8 @@ import android.util.Log;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.UUID;
 
 @SuppressLint("MissingPermission")
@@ -20,12 +22,16 @@ public class BluetoothClassicHandler {
     BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
     BluetoothClassicConnectingThread connectingThread;
-    BluetoothClassicAcceptConnectedThread connectedThread;
+    BluetoothClassicAcceptListenThread listenThread;
+    BluetoothClassicAcceptSendThread sendThread;
     private String NAME = "XDTKAndroid3";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
     private boolean running;
     public String STOPCHAR = " | ";
     private CommunicationHandler commsHandler;
+
+    private Queue<String> informationToSend = new ArrayDeque<String>();
+    private int packetsInOStream = 0;
 
     public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
         mainApp = activity;
@@ -58,14 +64,15 @@ public class BluetoothClassicHandler {
     }
 
     public synchronized void connect(BluetoothSocket socket){
-        connectedThread = new BluetoothClassicAcceptConnectedThread(socket);
-        connectedThread.start();
+        listenThread = new BluetoothClassicAcceptListenThread(socket);
+        listenThread.start();
+        sendThread = new BluetoothClassicAcceptSendThread(socket);
         Log.d(TAG, "Socket connected!");
     }
 
     public void sendData(String info){
-        if (connectedThread != null){
-            connectedThread.write(info);
+        if (sendThread != null){
+            sendThread.write(info + STOPCHAR);
         }
     }
 
@@ -78,9 +85,13 @@ public class BluetoothClassicHandler {
             connectingThread.cancel();
             connectingThread = null;
         }
-        if (connectedThread != null){
-            connectedThread.cancel();
-            connectedThread = null;
+        if (listenThread != null){
+            listenThread.cancel();
+            listenThread = null;
+        }
+        if (sendThread != null){
+            sendThread.cancel();
+            sendThread = null;
         }
     }
 
@@ -132,10 +143,6 @@ public class BluetoothClassicHandler {
             }
         }
 
-        public BluetoothClassicAcceptConnectedThread getConnectedThread(){
-            return connectedThread;
-        }
-
         // Closes the connect socket and causes the thread to finish.
         public void cancel() {
             try {
@@ -146,16 +153,14 @@ public class BluetoothClassicHandler {
         }
     }
 
-    public class BluetoothClassicAcceptConnectedThread extends Thread {
+    public class BluetoothClassicAcceptListenThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
         private byte[] mmBuffer; // mmBuffer store for the stream
 
-        public BluetoothClassicAcceptConnectedThread(BluetoothSocket socket) {
+        public BluetoothClassicAcceptListenThread(BluetoothSocket socket) {
             mmSocket = socket;
             InputStream tmpIn = null;
-            OutputStream tmpOut = null;
 
             // Get the input and output streams; using temp objects because
             // member streams are final.
@@ -165,15 +170,8 @@ public class BluetoothClassicHandler {
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating input stream", e);
             }
-            try {
-                tmpOut = socket.getOutputStream();
-                Log.d(TAG, "Output Stream Created");
-            } catch (IOException e) {
-                Log.e(TAG, "Error occurred when creating output stream", e);
-            }
 
             mmInStream = tmpIn;
-            mmOutStream = tmpOut;
         }
 
         public void run() {
@@ -187,6 +185,9 @@ public class BluetoothClassicHandler {
                     numBytes = mmInStream.read(mmBuffer);
                     String message = new String(mmBuffer, StandardCharsets.UTF_8); // Decode with UTF-8
                     Log.d(TAG, "Received Message from Client: " + message);
+                    if (message.equals("HEARTBEAT")){
+                        packetsInOStream = 0;
+                    }
                     commsHandler.parseReceivedMessage(message);
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
@@ -195,14 +196,51 @@ public class BluetoothClassicHandler {
             }
         }
 
+        // Call this method from the main activity to shut down the connection.
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close the connect socket", e);
+            }
+        }
+    }
+
+    public class BluetoothClassicAcceptSendThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final OutputStream mmOutStream;
+
+        public BluetoothClassicAcceptSendThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams; using temp objects because
+            // member streams are final.
+            try {
+                tmpOut = socket.getOutputStream();
+                Log.d(TAG, "Output Stream Created");
+            } catch (IOException e) {
+                Log.e(TAG, "Error occurred when creating output stream", e);
+            }
+            mmOutStream = tmpOut;
+        }
+
+        public void enqueue(String data){
+            informationToSend.add(data);
+        }
+
         // Call this from the main activity to send data to the remote device.
         public void write(String data) {
+            if(packetsInOStream == 6){
+                return;
+            }
             // pre-append timestamp
             long timestamp = System.currentTimeMillis();
             String dataToSend = timestamp + "," + data;
             byte[] bytes = dataToSend.getBytes(StandardCharsets.UTF_8);
             try {
                 mmOutStream.write(bytes);
+                packetsInOStream++;
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);
             }
