@@ -37,6 +37,7 @@ import java.util.TimerTask;
 public class CommunicationHandler {
   private final String TAG = CommunicationHandler.class.getSimpleName();
 
+  // for Wi-Fi Transceiver
   private final int sendPort = 5555;
   private final int receivePort = 5556;
   private Boolean isConnected = false;
@@ -65,6 +66,7 @@ public class CommunicationHandler {
     vibrator = activity.getSystemService(Vibrator.class);
   }
 
+  // Open connection depending on which method of connection is being chosen
   public void openConnection(String ipAddress){
     if (isUsingWifi){
       if (bluetoothHandler != null){
@@ -94,14 +96,15 @@ public class CommunicationHandler {
       // Request relevant BT permissions
       BTPermissionHelper.requestPermissions(mainApp);
     } else{
+      // Initiate the transceiver and make the self discoverable
       Log.i(TAG, "Initiating Transceiver");
       bluetoothHandler = new BluetoothClassicHandler(mainApp, this);
       Log.i(TAG, "Becoming Discoverable");
       bluetoothHandler.makeSelfDiscoverable();
     }
-    bluetoothHandler.sendData("xdtk");
   }
 
+  // Closing connections to both transceivers, in case either one was left on
   public void closeConnection() {
     // close both just in case
     if (transceiver != null){

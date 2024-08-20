@@ -11,10 +11,10 @@ import android.util.Log;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.UUID;
 
+// Overall don't have to care about users not giving Bluetooth access.
+// It's already handled by the Bluetooth Permissions helper
 @SuppressLint("MissingPermission")
 public class BluetoothClassicHandler {
     private final String TAG = BluetoothClassicHandler.class.getSimpleName();
@@ -22,37 +22,38 @@ public class BluetoothClassicHandler {
     BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
     BluetoothClassicConnectingThread connectingThread;
-    BluetoothClassicAcceptListenThread listenThread;
-    BluetoothClassicAcceptSendThread sendThread;
-    private String NAME = "XDTKAndroid3";
+    BTClassicAcceptListenThread listenThread;
+    BTClassicAcceptSendThread sendThread;
+    private String NAME = "XDTKAndroid";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
     private boolean running;
-    public String STOPCHAR = " | ";
+    public String STOPCHAR = " | "; // to act as a character that separates different instructions
     private CommunicationHandler commsHandler;
 
-    private Queue<String> informationToSend = new ArrayDeque<String>();
-    private int currentPacketLength = 0;
-    private final int maxAllowedPacketLength = 8196;
+    private int currentPacketLength = 0; // current bytes in the stream
+    private final int maxAllowedPacketLength = 8196; // maximum size of the stream is 8196 bytes
 
+    // Creates a bluetooth handler. CommsHandler is included to parse received messages
     public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
         mainApp = activity;
+        // create a BluetoothManager to acquire a BluetoothAdapter
         bluetoothManager = mainApp.getSystemService(BluetoothManager.class);
+        // create a BluetoothAdapter to acquire a connection thread
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         this.commsHandler = commsHandler;
-
         this.running = true;
-
-        if (!bluetoothAdapter.isEnabled()) {
-            //TODO request user enable bluetooth
-        }
     }
 
+    // Changes device name to NAME
     void ChangeDeviceName(){
         bluetoothAdapter.setName(NAME);
         Log.i("BluetoothClassicConnector", "localdevicename : "+ NAME +" localdeviceAddress : " + bluetoothAdapter.getAddress());
     }
 
-    public void makeSelfDiscoverable(){ int requestCode = 1;
+    // Makes the Phone discoverable to other bluetooth devices for 5 minutes
+    public void makeSelfDiscoverable(){
+        int requestCode = 1;
         // create a thread to allow for discoverability and connectivity in the background
         connectingThread = new BluetoothClassicConnectingThread();
         connectingThread.start();
@@ -60,27 +61,34 @@ public class BluetoothClassicHandler {
         ChangeDeviceName(); // change the device name to make it more unique
         Intent discoverableIntent =
                 new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); // indicates 5 minutes of extra discovery time
         mainApp.startActivityForResult(discoverableIntent, requestCode, null);
     }
 
+    // Set up listen and send threads for a device.
+    // Synchronized with the BluetoothClassicConnectingThread after connection's finished
     public synchronized void connect(BluetoothSocket socket){
-        listenThread = new BluetoothClassicAcceptListenThread(socket);
+        // Create new listen and send threads to both read and write asynchronously
+        listenThread = new BTClassicAcceptListenThread(socket);
         listenThread.start();
-        sendThread = new BluetoothClassicAcceptSendThread(socket);
+        sendThread = new BTClassicAcceptSendThread(socket);
+        // sendThread has no run method, no need to start
         Log.d(TAG, "Socket connected!");
     }
 
+    // sends given data using the send thread
     public void sendData(String info){
         if (sendThread != null){
             sendThread.write(info);
         }
     }
 
+    // returns whether it's running
     public boolean isRunning() {
         return running;
     }
 
+    // Closes all current threads
     public void close() {
         if (connectingThread != null){
             connectingThread.cancel();
@@ -96,25 +104,25 @@ public class BluetoothClassicHandler {
         }
     }
 
+    // Class to asynchronously connect to other devices
     public class BluetoothClassicConnectingThread extends Thread {
-        private final BluetoothServerSocket mmServerSocket;
+        private final BluetoothServerSocket btServerSocket;
 
         public BluetoothClassicConnectingThread() {
             Log.d(TAG, "Thread Initiated");
-            // Use a temporary object that is later assigned to mmServerSocket
-            // because mmServerSocket is final.
+            // Use a temporary object that is later assigned to btServerSocket since it's final.
             BluetoothServerSocket tmp = null;
             try {
-                // MY_UUID is the app's UUID string, also used by the client code.
+                // ANDROID_UUID is the app's UUID string, also used by the client code.
                 tmp = BluetoothAdapter.getDefaultAdapter().listenUsingInsecureRfcommWithServiceRecord(NAME, UUID.fromString(ANDROID_UUID));
             } catch (IOException e) {
                 Log.e(TAG, "Socket's listen() method failed", e);
             }
-            mmServerSocket = tmp;
+            btServerSocket = tmp;
         }
 
         public void run() {
-            BluetoothSocket socket = null;
+            BluetoothSocket socket;
             // Keep listening until exception occurs or a socket is returned.
             Log.d(TAG, "Thread Initiated and Run");
             while (true) {
@@ -122,14 +130,14 @@ public class BluetoothClassicHandler {
                 try {
                     // This is a blocking call and will only return on a
                     // successful connection or an exception
-                    socket = mmServerSocket.accept();
+                    socket = btServerSocket.accept();
                     Log.d(TAG, "Socket Accepted");
                 } catch (IOException e) {
                     Log.e(TAG, "Socket's accept() method failed", e);
                     break;
                 }
 
-                // If a connection was accepted
+                // If a connection was accepted, call synchronized connect to make other threads
                 if (socket != null) {
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
@@ -138,7 +146,7 @@ public class BluetoothClassicHandler {
                         Log.d(TAG, "Synced!");
                         connect(socket);
                     }
-                    cancel();
+                    cancel(); // cancels the thread because we don't want to connect to multiple clients
                     break;
                 }
             }
@@ -147,24 +155,25 @@ public class BluetoothClassicHandler {
         // Closes the connect socket and causes the thread to finish.
         public void cancel() {
             try {
-                mmServerSocket.close();
+                btServerSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Could not close the connect socket", e);
             }
         }
     }
 
-    public class BluetoothClassicAcceptListenThread extends Thread {
-        private final BluetoothSocket mmSocket;
-        private final InputStream mmInStream;
-        private byte[] mmBuffer; // mmBuffer store for the stream
+    // Thread to handle listening
+    public class BTClassicAcceptListenThread extends Thread {
+        private final BluetoothSocket btSocket;
+        private final InputStream btInputStream;
+        private byte[] messageBuffer; // mmBuffer store for the stream
 
-        public BluetoothClassicAcceptListenThread(BluetoothSocket socket) {
-            mmSocket = socket;
+        public BTClassicAcceptListenThread(BluetoothSocket socket) {
+            btSocket = socket;
             InputStream tmpIn = null;
 
-            // Get the input and output streams; using temp objects because
-            // member streams are final.
+            // Get the input stream; using temp objects because member streams are final.
+            // we don't need the output stream here, that's for the other thread
             try {
                 tmpIn = socket.getInputStream();
                 Log.d(TAG, "Input Stream Created");
@@ -172,23 +181,28 @@ public class BluetoothClassicHandler {
                 Log.e(TAG, "Error occurred when creating input stream", e);
             }
 
-            mmInStream = tmpIn;
+            btInputStream = tmpIn;
         }
 
         public void run() {
-            mmBuffer = new byte[1024];
+            messageBuffer = new byte[1024]; // max size for read messages
+            // Maximum is 8192, but in this case we are getting 6-byte messages so we are good
             int numBytes; // bytes returned from read()
 
             // Keep listening to the InputStream until an exception occurs.
             while (true) {
                 try {
-                    mmBuffer = new byte[9]; // the only two possible texts received is "WHOAREYOU" and "HEARTBEAT" so 1024 should be more than enough
-                    numBytes = mmInStream.read(mmBuffer);
-                    String message = new String(mmBuffer, StandardCharsets.UTF_8); // Decode with UTF-8
+                    messageBuffer = new byte[9]; // the only two possible texts received is "WHOAREYOU" and "HEARTBEAT" so 1024 should be more than enough
+
+                    numBytes = btInputStream.read(messageBuffer); // read the stream
+                    String message = new String(messageBuffer, StandardCharsets.UTF_8); // Decode with UTF-8
+
                     Log.d(TAG, "Received Message from Client: " + message);
                     if (message.equals("HEARTBEAT")){
+                        // we know the stream's been read, so it's clear to put in info
                         currentPacketLength = 0;
                     }
+                    // In all cases, send it back over to comm handler to parse
                     commsHandler.parseReceivedMessage(message);
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
@@ -200,34 +214,31 @@ public class BluetoothClassicHandler {
         // Call this method from the main activity to shut down the connection.
         public void cancel() {
             try {
-                mmSocket.close();
+                btSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Could not close the connect socket", e);
             }
         }
     }
 
-    public class BluetoothClassicAcceptSendThread extends Thread {
-        private final BluetoothSocket mmSocket;
-        private final OutputStream mmOutStream;
+    // Thread to handle sending
+    public class BTClassicAcceptSendThread extends Thread {
+        private final BluetoothSocket btSocket;
+        private final OutputStream btOutputStream;
 
-        public BluetoothClassicAcceptSendThread(BluetoothSocket socket) {
-            mmSocket = socket;
+        public BTClassicAcceptSendThread(BluetoothSocket socket) {
+            btSocket = socket;
             OutputStream tmpOut = null;
 
-            // Get the input and output streams; using temp objects because
-            // member streams are final.
+            // Get the output stream; using temp objects because member streams are final.
+            // we don't need the input stream here, that's for the other thread
             try {
                 tmpOut = socket.getOutputStream();
                 Log.d(TAG, "Output Stream Created");
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating output stream", e);
             }
-            mmOutStream = tmpOut;
-        }
-
-        public void enqueue(String data){
-            informationToSend.add(data);
+            btOutputStream = tmpOut;
         }
 
         // Call this from the main activity to send data to the remote device.
@@ -235,16 +246,22 @@ public class BluetoothClassicHandler {
             // pre-append timestamp
             long timestamp = System.currentTimeMillis();
             String dataToSend = timestamp + "," + data;
+
+            // if there's already info in the thread, prefix a Stopchar
             if (currentPacketLength > 0){
                 dataToSend = STOPCHAR + dataToSend;
             }
+            // Convert sending data to bytes
             byte[] bytes = dataToSend.getBytes(StandardCharsets.UTF_8);
+            // If too long, don't send it
             if(currentPacketLength + bytes.length >= maxAllowedPacketLength){
                 return;
             }
+            // Try to send it
             try {
-                mmOutStream.write(bytes);
-                currentPacketLength+=bytes.length;
+                btOutputStream.write(bytes);
+                // Add to the current stream length
+                currentPacketLength += bytes.length;
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);
             }
@@ -253,7 +270,7 @@ public class BluetoothClassicHandler {
         // Call this method from the main activity to shut down the connection.
         public void cancel() {
             try {
-                mmSocket.close();
+                btSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Could not close the connect socket", e);
             }
