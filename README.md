@@ -1,4 +1,5 @@
 # XDTK: Cross-device Toolkit for Android & Unity
+## Ryan (thesuperRL)'s fork for Bluetooth Implementations
 
 The Cross-device Toolkit (XDTK) is an open-source toolkit developed to enable simple, straight-forward communication between Android devices and the Unity game engine. The toolkit is comprised of a native Android application (one for Phone/Tablet devices, and one for WearOS devices) and a Unity package. XDTK handles device discovery and communication over WiFi, with Android devices providing a steady stream of sensor data, input events, and (if applicable) ARCore pose information by default.
 
@@ -62,7 +63,10 @@ Connect all devices to the same **IPv4 wireless network** (e.g., a mobile hotspo
 
 * On your Android device(s), open the **XR Input** app and press **Edit** to enter the IPv4 address of the device running Unity. (Here is how to locate this on [Windows](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9), [Mac](https://www.security.org/vpn/find-mac-ip-address/), and [Meta Quest](https://multitechverse.com/how-to-check-oculus-quest-2-ip-address/)). *Note: this value is stored between app sessions.*
 
-* Tap **Start Connection** to begin sending data to Unity. If the connection is successful, the status indicator in the Android app will be green. In Unity, a **Device** GameObject will appear and should rotate as you rotate your Android device. As you connect more devices they should also appear here. 
+* Select the ideal method of communication by tapping the button that says it.
+
+* Tap **Start Connection** to begin sending data to Unity. If the connection is successful, the status indicator in the Android app will be green. In Unity, a **Device** GameObject will appear and should rotate as you rotate your Android device. As you connect more devices they should also appear here.
+* - For Bluetooth, Remember to activate the connection BEFORE you hit play in the Unity game.
 
 * If the connection is unsuccessful (or if the Unity side is not running), the Android status indicator will be orange and read *"Sending..."*.
 
@@ -85,10 +89,15 @@ If the device is *still* not connecting, your firewall may blocking Unity from e
 * For details on the Android application and communication protocol, see [here](android/README.md).
 
 ## Contributors
+This repository was forked by Ryan for Bluetooth purposes
+ - **Ryan C. Li**, Eastside Preparatory School
 
+### With help from
  - **Eric J. Gonzalez**, Google AR
+ - **Mar Gonzalez-Franco**, Google AR
+
+### Other Contributors to the original XDTK repository 
  - **Khushman Patel**, Google AR
  - **Karan Ahuja**, Northwestern University & Google AR
- - **Mar Gonzalez-Franco**, Google AR
 
 
