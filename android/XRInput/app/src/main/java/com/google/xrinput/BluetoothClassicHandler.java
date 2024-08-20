@@ -31,8 +31,8 @@ public class BluetoothClassicHandler {
     private CommunicationHandler commsHandler;
 
     private Queue<String> informationToSend = new ArrayDeque<String>();
-    private int packetsInOStream = 0;
-    private final int maxAllowedPackets = 8;
+    private int currentPacketLength = 0;
+    private final int maxAllowedPacketLength = 8196;
 
     public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
         mainApp = activity;
@@ -73,7 +73,7 @@ public class BluetoothClassicHandler {
 
     public void sendData(String info){
         if (sendThread != null){
-            sendThread.write(info + STOPCHAR);
+            sendThread.write(info);
         }
     }
 
@@ -187,7 +187,7 @@ public class BluetoothClassicHandler {
                     String message = new String(mmBuffer, StandardCharsets.UTF_8); // Decode with UTF-8
                     Log.d(TAG, "Received Message from Client: " + message);
                     if (message.equals("HEARTBEAT")){
-                        packetsInOStream = 0;
+                        currentPacketLength = 0;
                     }
                     commsHandler.parseReceivedMessage(message);
                 } catch (IOException e) {
@@ -232,16 +232,19 @@ public class BluetoothClassicHandler {
 
         // Call this from the main activity to send data to the remote device.
         public void write(String data) {
-            if(packetsInOStream == maxAllowedPackets){
-                return;
-            }
             // pre-append timestamp
             long timestamp = System.currentTimeMillis();
             String dataToSend = timestamp + "," + data;
+            if (currentPacketLength > 0){
+                dataToSend = STOPCHAR + dataToSend;
+            }
             byte[] bytes = dataToSend.getBytes(StandardCharsets.UTF_8);
+            if(currentPacketLength + bytes.length >= maxAllowedPacketLength){
+                return;
+            }
             try {
                 mmOutStream.write(bytes);
-                packetsInOStream++;
+                currentPacketLength+=bytes.length;
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);
             }
