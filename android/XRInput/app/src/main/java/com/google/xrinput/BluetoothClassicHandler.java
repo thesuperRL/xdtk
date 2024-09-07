@@ -67,7 +67,7 @@ public class BluetoothClassicHandler {
 
     // Set up listen and send threads for a device.
     // Synchronized with the BluetoothClassicConnectingThread after connection's finished
-    public synchronized void connect(BluetoothSocket socket){
+    public void connect(BluetoothSocket socket){
         // Create new listen and send threads to both read and write asynchronously
         listenThread = new BTClassicAcceptListenThread(socket);
         listenThread.start();
@@ -142,10 +142,7 @@ public class BluetoothClassicHandler {
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
                     Log.d(TAG, "Syncing...");
-                    synchronized (BluetoothClassicHandler.this) {
-                        Log.d(TAG, "Synced!");
-                        connect(socket);
-                    }
+                    connect(socket);
                     cancel(); // cancels the thread because we don't want to connect to multiple clients
                     break;
                 }
