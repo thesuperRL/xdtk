@@ -12,6 +12,8 @@ import android.util.Log;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 // Overall don't have to care about users not giving Bluetooth access.
 // It's already handled by the Bluetooth Permissions helper
@@ -27,11 +29,16 @@ public class BluetoothClassicHandler {
     private String NAME = "XDTKAndroid";
     private String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated
     private boolean running;
-    public String STOPCHAR = " | "; // to act as a character that separates different instructions
+    public String STOPCHAR = "|"; // to act as a character that separates different instructions
     private CommunicationHandler commsHandler;
+    private BlockingQueue<String[]> messageQueue;
+    private String latestCommands = "";
+    private boolean streamRead = true;
 
-    private int currentPacketLength = 0; // current bytes in the stream
-    private final int maxAllowedPacketLength = 8196; // maximum size of the stream is 8196 bytes
+    private final int MAX_PACKET_LENGTH = 1000; // maximum size of the stream is 8196 bytes
+    private final int MAX_ALLOWED_DELAY = 100; // maximum delay in packet sending before it's ignored
+                                                // because of how old it is (in milliseconds)
+
 
     // Creates a bluetooth handler. CommsHandler is included to parse received messages
     public BluetoothClassicHandler(Activity activity, CommunicationHandler commsHandler){
@@ -43,6 +50,7 @@ public class BluetoothClassicHandler {
 
         this.commsHandler = commsHandler;
         this.running = true;
+        messageQueue = new LinkedBlockingQueue<>();
     }
 
     // Changes device name to NAME
@@ -72,14 +80,27 @@ public class BluetoothClassicHandler {
         listenThread = new BTClassicAcceptListenThread(socket);
         listenThread.start();
         sendThread = new BTClassicAcceptSendThread(socket);
-        // sendThread has no run method, no need to start
+        sendThread.start();
         Log.d(TAG, "Socket connected!");
+    }
+
+    public void write(String data) {
+        long timestamp = System.currentTimeMillis();
+        String dataToSend = timestamp + "," + data;
+        if (latestCommands.length() + dataToSend.length() >= MAX_PACKET_LENGTH - 10){
+            //@SuppressLint("DefaultLocale") String paddedLength = String.format("%04d", latestCommands.length() + 10);
+            messageQueue.add(new String[]{Long.toString(timestamp), latestCommands});
+            Log.d(TAG, "ADDED " + latestCommands);
+            latestCommands = STOPCHAR + dataToSend + STOPCHAR;
+        } else {
+            latestCommands += dataToSend + STOPCHAR;
+        }
     }
 
     // sends given data using the send thread
     public void sendData(String info){
         if (sendThread != null){
-            sendThread.write(info);
+            write(info);
         }
     }
 
@@ -179,6 +200,7 @@ public class BluetoothClassicHandler {
             }
 
             btInputStream = tmpIn;
+            Log.d(TAG, "InputStream Initiated");
         }
 
         public void run() {
@@ -196,8 +218,7 @@ public class BluetoothClassicHandler {
 
                     Log.d(TAG, "Received Message from Client: " + message);
                     if (message.equals("HEARTBEAT")){
-                        // we know the stream's been read, so it's clear to put in info
-                        currentPacketLength = 0;
+                        streamRead = true;
                     }
                     // In all cases, send it back over to comm handler to parse
                     commsHandler.parseReceivedMessage(message);
@@ -239,28 +260,40 @@ public class BluetoothClassicHandler {
         }
 
         // Call this from the main activity to send data to the remote device.
-        public void write(String data) {
-            // pre-append timestamp
-            long timestamp = System.currentTimeMillis();
-            String dataToSend = timestamp + "," + data;
-
-            // if there's already info in the thread, prefix a Stopchar
-            if (currentPacketLength > 0){
-                dataToSend = STOPCHAR + dataToSend;
-            }
-            // Convert sending data to bytes
-            byte[] bytes = dataToSend.getBytes(StandardCharsets.UTF_8);
-            // If too long, don't send it
-            if(currentPacketLength + bytes.length >= maxAllowedPacketLength){
-                return;
-            }
-            // Try to send it
-            try {
-                btOutputStream.write(bytes);
-                // Add to the current stream length
-                currentPacketLength += bytes.length;
-            } catch (IOException e) {
-                Log.e(TAG, "Error occurred when sending data", e);
+        @SuppressLint("DefaultLocale")
+        public void run(){
+            while (running) {
+                try {
+                    long timestamp = System.currentTimeMillis();
+                    while (!messageQueue.isEmpty() && timestamp - Long.parseLong(messageQueue.peek()[0]) > MAX_ALLOWED_DELAY) {
+                        Log.d(TAG, "Time = " + (timestamp - Long.parseLong(messageQueue.peek()[0])));
+                        messageQueue.take();
+                    }
+                    Log.d(TAG, "blocking");
+                    String[] dataToSend = messageQueue.take();
+                    Log.d(TAG, "unblocked");
+                    // Convert sending data to bytes
+                    Log.d(TAG, "bytes1");
+                    byte[] bytes = dataToSend[1].getBytes(StandardCharsets.UTF_8);
+//                    // Pad bytes length until there's 4 digits (max 8196)
+//                    Log.d(TAG, "pad");
+//                    String paddedLength = String.format("%04d", bytes.length);
+//                    // Encode that into another message
+//                    Log.d(TAG, "bytes2");
+//                    byte[] length = paddedLength.getBytes(StandardCharsets.UTF_8);
+                    // Try to send it
+                    Log.d(TAG, "try");
+                    if (streamRead) {
+                        try {
+                            streamRead = false;
+                            btOutputStream.write(bytes);
+                        } catch (IOException e) {
+                            Log.e(TAG, "Error occurred when sending data", e);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "Bluetooth errored with " + e + " while sending message");
+                }
             }
         }
 
