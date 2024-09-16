@@ -47,7 +47,6 @@ public class CommunicationHandler {
   // connections
   public boolean isUsingWifi = true;
   private Transceiver transceiver;
-  private BluetoothClassicHandler bluetoothHandler;
 
   // timer
   private Timer resetHeartbeatTimer;
@@ -68,27 +67,20 @@ public class CommunicationHandler {
 
   // Open connection depending on which method of connection is being chosen
   public void openConnection(String ipAddress){
+    closeConnection();
     if (isUsingWifi){
-      if (bluetoothHandler != null){
-        // close unnecessary bluetooth connection
-        closeBluetoothConnection();
-        bluetoothHandler = null;
-      }
       openWifiConnection(ipAddress);
     } else{
-      if (transceiver != null){
-        // close unnecessary Wi-Fi connection
-        closeWifiConnection();
-        transceiver = null;
-      }
       openBluetoothConnection();
     }
   }
 
+  // Open the Transceiver as Wi-Fi
   public void openWifiConnection(String ipAddress) {
-    transceiver = new Transceiver(ipAddress, sendPort, receivePort, this);
+    transceiver = new WiFiTransceiver(ipAddress, sendPort, receivePort, this);
   }
 
+  // Open the Transceiver as Bluetooth
   public void openBluetoothConnection(){
     // If it doesn't have relevant BT permissions
     if (!BTPermissionHelper.hasBTPermission(mainApp)){
@@ -98,33 +90,16 @@ public class CommunicationHandler {
     } else{
       // Initiate the transceiver and make the self discoverable
       Log.i(TAG, "Initiating Transceiver");
-      bluetoothHandler = new BluetoothClassicHandler(mainApp, this);
-      Log.i(TAG, "Becoming Discoverable");
-      bluetoothHandler.makeSelfDiscoverable();
+      transceiver = new BluetoothTransceiver(mainApp, this);
     }
   }
 
-  // Closing connections to both transceivers, in case either one was left on
+  // Closing connections to transceiver
   public void closeConnection() {
-    // close both just in case
-    if (transceiver != null){
-      // close unnecessary Wi-Fi connection
-      closeWifiConnection();
-      transceiver = null;
+    if (transceiver == null){
+      return;
     }
-    if (bluetoothHandler != null){
-      // close unnecessary bluetooth connection
-      closeBluetoothConnection();
-      bluetoothHandler = null;
-    }
-  }
-
-  public void closeWifiConnection(){
     transceiver.close();
-  }
-
-  public void closeBluetoothConnection(){
-    bluetoothHandler.close();
   }
 
   private void initResetHeartbeatTask() {
@@ -140,19 +115,10 @@ public class CommunicationHandler {
 
   /** Getter Functions */
   public boolean isRunning() {
-    if (isUsingWifi){
-      if (transceiver == null) {
-        return false;
-      } else {
-        return transceiver.isRunning();
-      }
-    } else{
-      if (bluetoothHandler == null) {
-        return false;
-      } else {
-        return bluetoothHandler.isRunning();
-      }
+    if (transceiver == null){
+      return false;
     }
+    return transceiver.isRunning();
   }
 
   public boolean isConnected() {
@@ -160,12 +126,10 @@ public class CommunicationHandler {
   }
 
   public void sendData(String message){
-    if (isUsingWifi && transceiver != null){
+    if (transceiver != null) {
       transceiver.sendData(message);
-    } else if (bluetoothHandler != null){
-      bluetoothHandler.sendData(message);
-    } else{
-      Log.d(TAG, "Failed to send message: \"" + message + "\" because " + (isUsingWifi ? "Wi-fi" : "Bluetooth") + " transceiver is null.");
+    }else{
+      Log.d(TAG, "Failed to send message: \"" + message + "\" because transceiver is null.");
     }
   }
 
