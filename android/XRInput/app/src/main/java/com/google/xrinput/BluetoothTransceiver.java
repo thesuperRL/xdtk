@@ -42,7 +42,7 @@ public class BluetoothTransceiver extends Transceiver {
 
     // Configurable details
     public String STOPCHAR = "|"; // to act as a character that separates different instructions. Should match the Stopchars in the Unity side
-    private final int MAX_PACKET_LENGTH = 1000; // maximum size of the stream is 8196 bytes
+    private final int MAX_PACKET_LENGTH = 1024; // maximum size of the stream is 8196 bytes
     private final int MAX_ALLOWED_DELAY = 100; // maximum delay in packet sending before it's ignored
                                                 // because of how old it is (in milliseconds)
 
