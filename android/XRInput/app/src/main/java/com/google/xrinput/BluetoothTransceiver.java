@@ -88,7 +88,7 @@ public class BluetoothTransceiver extends Transceiver {
     }
 
     // Set up listen and send threads for a device.
-    public void connect(BluetoothSocket socket){
+    public void connected(BluetoothSocket socket){
         // Create new listen and send threads to both read and write asynchronously and simultaneously
         btStreamManager = new BluetoothStreamManager(socket);
         listenThread = new BluetoothListeningThread(btStreamManager);
@@ -174,7 +174,7 @@ public class BluetoothTransceiver extends Transceiver {
                 if (socket != null) {
                     // A connection was accepted. Connect back via connect
                     Log.d(TAG, "Connecting...");
-                    connect(socket);
+                    connected(socket);
                     cancel(); // cancels the thread because we don't want to connect to multiple clients
                     break;
                 }
