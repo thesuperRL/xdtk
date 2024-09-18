@@ -281,7 +281,7 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
     SharedPreferences sharedPref = getSharedPreferences("DeviceInputXRPreferences", MODE_PRIVATE);
     hmdIPstring = sharedPref.getString("hmdIPstring", hmdIPstring);
 
-    // Bluetooth LE requires specific permissions to operate. If we did not yet obtain runtime
+    // Bluetooth requires specific permissions to operate. If we did not yet obtain runtime
     // permission, now is a good time to ask the user for it.
     if (!BTPermissionHelper.hasBTPermission(this)) {
       BTPermissionHelper.requestPermissions(this);

@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat;
 
 public final class BTPermissionHelper {
     private static final int BT_PERMISSION_CODE = 1;
-    private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
 
     private static final String TAG = BTPermissionHelper.class.getSimpleName();
 
@@ -91,14 +90,5 @@ public final class BTPermissionHelper {
         intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.fromParts("package", activity.getPackageName(), null));
         activity.startActivity(intent);
-    }
-
-    @SuppressLint("MissingPermission") // We check for it at the if statement
-    public static void askToEnableBT(Activity activity) {
-        if (!hasBTPermission(activity)) {
-            requestBluetoothPermissions(activity);
-        }
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(enableBtIntent, BT_PERMISSION_CODE);
     }
 }

@@ -37,7 +37,7 @@
   <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
   <!-- Needed to communicate with other Bluetooth devices.-->
   <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-  <!-- Needed to look derive physical location using Bluetooth. For some reason BLE needs this too -->
+  <!-- Needed to look derive physical location using Bluetooth. For some reason Bluetooth needs this too -->
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   
