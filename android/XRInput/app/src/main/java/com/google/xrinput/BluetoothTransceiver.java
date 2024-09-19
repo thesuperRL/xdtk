@@ -31,8 +31,8 @@ public class BluetoothTransceiver extends Transceiver {
     BluetoothSendingThread sendThread;
 
     // Device Details
-    private final String NAME = "XDTKAndroid"; // Name of the device. Will be displayed on Bluetooth pickers in Unity side
-    private final String ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740ab"; // randomly generated. Should match the Stopchars in the Unity side
+    private String NAME; // Name of the device. Will be displayed on Bluetooth pickers in Unity side
+    private String ANDROID_UUID; // randomly generated. Should match the Unity side
 
     // Message sending and receiving
     private final BlockingQueue<String[]> messageQueue; // Blocking queue to store messages and timeframes. Filled with String[2]
@@ -47,12 +47,14 @@ public class BluetoothTransceiver extends Transceiver {
                                                 // because of how old it is (in milliseconds)
 
     // Creates a bluetooth handler. CommsHandler is included to parse received messages
-    public BluetoothTransceiver(Activity activity, CommunicationHandler commsHandler){
+    public BluetoothTransceiver(Activity activity, CommunicationHandler commsHandler, int BTGUIDNumber){
         mainApp = activity;
         // create a BluetoothManager to acquire a BluetoothAdapter
         bluetoothManager = mainApp.getSystemService(BluetoothManager.class);
         // create a BluetoothAdapter to acquire a connection thread
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        // set starting Bluetooth details
+        setBluetoothDetails(BTGUIDNumber);
 
         // Record items to parent class
         this.communicationHandler = commsHandler;
@@ -65,6 +67,11 @@ public class BluetoothTransceiver extends Transceiver {
 
         // Make the Bluetooth device discoverable
         makeSelfDiscoverable();
+    }
+
+    public void setBluetoothDetails(int selectedNumber){
+        NAME = "XDTKAndroid-" + selectedNumber;
+        ANDROID_UUID = "59a8bede-af7b-49de-b454-e9e469e740a" + Integer.toHexString(selectedNumber);
     }
 
     // Changes device name to NAME

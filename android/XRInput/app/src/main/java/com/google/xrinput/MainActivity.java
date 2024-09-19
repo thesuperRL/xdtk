@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
   private TextView orientationText;
   private Button connectButton;
   private Button editHMDaddressButton;
+  private Button editBTGUIDButton;
   private Switch toggleARCoreSwitch;
   private ToggleButton toggleConnectionSwitch;
   private String hmdIPstring = "192.168.0.1";
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
   private boolean sendingDataFlag = false;
   private int tapsToStopConnection = 8;
   private int tapsRemainingToStopConnection = tapsToStopConnection;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -179,6 +181,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                     connectButton.setEnabled(true);
                     editHMDaddressButton.setClickable(true);
                     editHMDaddressButton.setEnabled(true);
+                    editBTGUIDButton.setClickable(true);
+                    editBTGUIDButton.setEnabled(true);
                     toggleARCoreSwitch.setClickable(true);
                     toggleARCoreSwitch.setEnabled(true);
                     toggleConnectionSwitch.setClickable(true);
@@ -306,6 +310,8 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                   connectButton.setEnabled(false);
                   editHMDaddressButton.setClickable(false);
                   editHMDaddressButton.setEnabled(false);
+                  editBTGUIDButton.setClickable(false);
+                  editBTGUIDButton.setEnabled(false);
                   toggleARCoreSwitch.setClickable(false);
                   toggleARCoreSwitch.setEnabled(false);
                   toggleConnectionSwitch.setClickable(false);
@@ -380,6 +386,53 @@ public class MainActivity extends AppCompatActivity implements SampleRender.Rend
                                     SharedPreferences.Editor editor = sharedPref.edit();
                                     editor.putString("hmdIPstring", hmdIPstring);
                                     editor.apply();
+                                  }
+                                })
+                        .setNegativeButton(
+                                "Cancel",
+                                new DialogInterface.OnClickListener() {
+                                  @Override
+                                  public void onClick(DialogInterface dialog, int whichButton) {
+                                    // When the "Cancel" button is clicked, do nothing
+                                  }
+                                })
+                        .show();
+              }
+            });
+
+
+    editBTGUIDButton = findViewById(R.id.bluetoothcode_button);
+    editBTGUIDButton.setOnClickListener(
+            new View.OnClickListener() {
+              @Override
+              public void onClick(View v) {
+
+                // Create an EditText
+                final EditText input = new EditText(MainActivity.this);
+
+                // Set up the AlertDialog
+                new AlertDialog.Builder(MainActivity.this)
+                        // .setTitle("Edit IP Address of HMD to connect with")
+                        .setMessage("Enter the last digit for your Bluetooth GUID (0-15):")
+                        .setView(input)
+                        .setPositiveButton(
+                                "OK",
+                                new DialogInterface.OnClickListener() {
+                                  @Override
+                                  public void onClick(DialogInterface dialog, int whichButton) {
+                                    // When the "OK" button is clicked, get the text from the EditText and
+                                    // assign it to your String variable
+
+                                    // only allow '0-9'
+                                    int result = Integer.parseInt(input.getText().toString().trim().replaceAll("[^0-9]", ""));
+                                    if (result > 15 || result < 0){
+                                      // alert that it was not a valid entry
+                                      messageSnackbarHelper.showMessage(MainActivity.this, "Not a number between 0 and 15...");
+                                      return;
+                                    }
+
+                                    // save string to memory
+                                    communicationHandler.BluetoothGUIDNumber = result;
                                   }
                                 })
                         .setNegativeButton(

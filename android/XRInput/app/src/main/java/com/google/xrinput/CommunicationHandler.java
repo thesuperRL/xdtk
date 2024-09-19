@@ -58,6 +58,9 @@ public class CommunicationHandler {
   private long timeOfLastMsg_DeviceInfo_ms = 0;
   private final long msgRate_DeviceInfo_ms = 20;
 
+  // Bluetooth GUID
+  public int BluetoothGUIDNumber = 0;
+
   public CommunicationHandler(Activity activity) {
     mainApp = activity;
     resetHeartbeatTimer = new Timer();
@@ -90,7 +93,7 @@ public class CommunicationHandler {
     } else{
       // Initiate the transceiver and make the self discoverable
       Log.i(TAG, "Initiating Transceiver");
-      transceiver = new BluetoothTransceiver(mainApp, this);
+      transceiver = new BluetoothTransceiver(mainApp, this, BluetoothGUIDNumber);
     }
   }
 

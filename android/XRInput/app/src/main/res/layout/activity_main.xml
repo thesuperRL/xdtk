@@ -130,6 +130,48 @@
         android:layout_width="match_parent"
         android:layout_height="30dp"
         android:orientation="horizontal">
+
+      <LinearLayout
+          android:id="@+id/hmdip_layout"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:layout_weight="0"
+          android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/hmdip_label"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="top"
+            android:layout_marginRight="8dp"
+            android:layout_weight="0"
+            android:text="HMD IP:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/hmdip_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
+            android:text="192.168.0.1" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0" />
+
+        <Button
+            android:id="@+id/editHMDip_button"
+            android:layout_width="60dp"
+            android:layout_height="match_parent"
+            android:layout_marginTop="-4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_weight="0"
+            android:text="@string/edit"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+      </LinearLayout>
+
       <TextView
           android:id="@+id/hmdip_label"
           android:textStyle="bold"
@@ -160,6 +202,33 @@
           android:textSize="8sp"
           tools:ignore="SmallSp" />
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bluetoothcode_layout"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal">
+
+      <TextView
+          android:id="@+id/textView"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:layout_weight="0"
+          android:text="Bluetooth Code:"
+          android:textStyle="bold" />
+
+      <Button
+          android:id="@+id/bluetoothcode_button"
+          android:layout_width="60dp"
+          android:layout_height="match_parent"
+          android:layout_marginTop="-4dp"
+          android:layout_marginBottom="4dp"
+          android:layout_weight="0"
+          android:text="EDIT"
+          android:textSize="8sp"
+          tools:ignore="SmallSp" />
+    </LinearLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="30dp"
